@@ -14,5 +14,6 @@ data class ClockSettings(
   val tickingSound: Boolean = false,
   val sleepTimerMinutes: Int = 0,
   val sleepTimerEndTime: Long? = null,
-  val fontStyle: String = "SansSerif"
+  val fontStyle: String = "SansSerif",
+  val ambientTheme: String = "OLED Black"
 )

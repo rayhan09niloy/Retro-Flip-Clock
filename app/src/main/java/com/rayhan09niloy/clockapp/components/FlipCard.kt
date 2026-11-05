@@ -34,6 +34,8 @@ import com.rayhan09niloy.clockapp.ui.theme.CanvasBlack
 import com.rayhan09niloy.clockapp.ui.theme.FlipDigitStyle
 import java.util.Locale
 
+import androidx.compose.ui.graphics.Color
+
 /**
  * Frameless Split-Flap Digit Group.
  * Zero cards, zero background fills, zero border outlines.
@@ -46,6 +48,7 @@ fun FlipCard(
   cardWidth: Dp = 260.dp,
   cardHeight: Dp = 160.dp,
   fontSize: TextUnit = 150.sp,
+  backgroundColor: Color = CanvasBlack,
   onFlipSound: (() -> Unit)? = null
 ) {
   var previousValue by remember { mutableIntStateOf(value) }
@@ -53,6 +56,16 @@ fun FlipCard(
 
   val flipAngle = remember { Animatable(0f) }
   val context = LocalContext.current
+
+  val vibrator = remember(context) {
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+      val manager = context.getSystemService(android.content.Context.VIBRATOR_MANAGER_SERVICE) as? android.os.VibratorManager
+      manager?.defaultVibrator
+    } else {
+      @Suppress("DEPRECATION")
+      context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as? android.os.Vibrator
+    }
+  }
 
   LaunchedEffect(value) {
     if (value != currentValue) {
@@ -71,6 +84,17 @@ fun FlipCard(
 
       if (animatorDurationScale > 0f) {
         onFlipSound?.invoke()
+        try {
+          if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            vibrator?.vibrate(android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_CLICK))
+          } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator?.vibrate(android.os.VibrationEffect.createOneShot(12L, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+          } else {
+            @Suppress("DEPRECATION")
+            vibrator?.vibrate(12L)
+          }
+        } catch (_: Exception) {}
+
         flipAngle.snapTo(0f)
         flipAngle.animateTo(
           targetValue = 180f,
@@ -95,7 +119,7 @@ fun FlipCard(
     modifier = modifier
       .width(cardWidth)
       .height(cardHeight)
-      .background(CanvasBlack)
+      .background(backgroundColor)
   ) {
     // 1. Static Upper Half: Displays the top 50% of the NEW digit (revealed as flap drops)
     Box(
@@ -219,7 +243,7 @@ fun FlipCard(
         .fillMaxWidth()
         .height(2.dp)
         .align(Alignment.Center)
-        .background(CanvasBlack)
+        .background(backgroundColor)
     )
   }
 }

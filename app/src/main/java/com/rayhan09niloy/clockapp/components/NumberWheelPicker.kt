@@ -27,13 +27,15 @@ import androidx.compose.ui.unit.sp
 import com.rayhan09niloy.clockapp.ui.theme.MetaMuted
 import com.rayhan09niloy.clockapp.ui.theme.SignalAmber
 
+import com.rayhan09niloy.clockapp.ui.theme.FlipNumeralFontFamily
+
 @Composable
 fun WheelPicker(
   items: List<String>,
   selectedIndex: Int,
   onSelectedIndexChanged: (Int) -> Unit,
   modifier: Modifier = Modifier,
-  fontFamily: FontFamily = FontFamily.SansSerif,
+  fontFamily: FontFamily = FlipNumeralFontFamily,
   visibleItemCount: Int = 3,
   itemHeight: Dp = 44.dp,
   itemWidth: Dp = 64.dp

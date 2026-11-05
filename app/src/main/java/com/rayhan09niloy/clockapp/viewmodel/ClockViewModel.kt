@@ -242,11 +242,15 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
     if (alarm.vibrate) {
       soundHelper.vibrateAlarm()
     }
-    soundHelper.playChime(alarm.volume)
+    soundHelper.playDefaultAlarmSound(
+      targetVolume = alarm.volume,
+      ascendingOver30Seconds = alarm.ascendingVolume
+    )
   }
 
   fun dismissCurrentAlarm() {
     val current = _triggeringAlarm.value ?: return
+    soundHelper.stopAlarmSound()
     _triggeringAlarm.value = null
     if (current.autoDelete) {
       deleteAlarm(current.id)
@@ -257,6 +261,7 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
 
   fun snoozeCurrentAlarm() {
     val current = _triggeringAlarm.value ?: return
+    soundHelper.stopAlarmSound()
     soundHelper.vibrateHaptic(50)
     _triggeringAlarm.value = null
     viewModelScope.launch {
@@ -270,6 +275,13 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
     _settings.value = updated
     saveSettings(updated)
     updateNextAlarmText()
+  }
+
+  fun cycleAmbientTheme() {
+    val current = com.rayhan09niloy.clockapp.model.AmbientTheme.fromName(_settings.value.ambientTheme)
+    val next = current.next()
+    updateSettings { it.copy(ambientTheme = next.displayName) }
+    soundHelper.vibrateHaptic(15)
   }
 
   fun setSleepTimer(minutes: Int) {
@@ -473,7 +485,8 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
       showWeather = prefs.getBoolean("show_weather", true),
       tickingSound = prefs.getBoolean("ticking_sound", false),
       sleepTimerMinutes = prefs.getInt("sleep_timer", 0),
-      fontStyle = "SansSerif"
+      fontStyle = "SansSerif",
+      ambientTheme = prefs.getString("ambient_theme", "OLED Black") ?: "OLED Black"
     )
   }
 
@@ -492,6 +505,7 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
       .putBoolean("ticking_sound", s.tickingSound)
       .putInt("sleep_timer", s.sleepTimerMinutes)
       .putString("font_style", "SansSerif")
+      .putString("ambient_theme", s.ambientTheme)
       .apply()
   }
 

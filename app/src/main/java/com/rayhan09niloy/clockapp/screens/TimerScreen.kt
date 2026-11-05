@@ -71,18 +71,22 @@ fun TimerScreen(
       .padding(horizontal = 16.dp, vertical = 8.dp)
   ) {
     val cardW = if (isLandscape) {
-      ((maxWidth - 64.dp) / 2).coerceIn(180.dp, 360.dp)
+      ((maxWidth - 24.dp) / 2).coerceAtLeast(160.dp)
     } else {
-      (maxWidth - 32.dp).coerceIn(240.dp, 380.dp)
+      (maxWidth - 16.dp).coerceAtLeast(240.dp)
     }
 
     val cardH = if (isLandscape) {
-      (maxHeight - 110.dp).coerceIn(130.dp, 280.dp)
+      (maxHeight - 80.dp).coerceAtLeast(120.dp)
     } else {
-      ((maxHeight - 170.dp) / 2).coerceIn(140.dp, 230.dp)
+      ((maxHeight - 160.dp) / 2).coerceAtLeast(140.dp)
     }
 
-    val fontSz = (cardH.value * 0.94f).sp
+    val fontSz = if (isLandscape) {
+      minOf(cardH.value * 0.96f, cardW.value / 1.18f).sp
+    } else {
+      minOf(cardH.value * 0.96f, cardW.value / 1.15f).sp
+    }
 
     Column(
       modifier = Modifier.fillMaxSize(),

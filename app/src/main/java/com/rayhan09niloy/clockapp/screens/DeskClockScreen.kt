@@ -1,7 +1,11 @@
 package com.rayhan09niloy.clockapp.screens
 
 import android.content.res.Configuration
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -12,19 +16,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rayhan09niloy.clockapp.components.FlipCard
-import com.rayhan09niloy.clockapp.ui.theme.CanvasBlack
+import com.rayhan09niloy.clockapp.model.AmbientTheme
+import com.rayhan09niloy.clockapp.ui.theme.FlapBone
+import com.rayhan09niloy.clockapp.ui.theme.HairlineDivider
 import com.rayhan09niloy.clockapp.ui.theme.MetaLabelStyle
 import com.rayhan09niloy.clockapp.ui.theme.RunningSecondsStyle
 import com.rayhan09niloy.clockapp.viewmodel.ClockViewModel
@@ -40,6 +51,14 @@ fun DeskClockScreen(
   val amPm by viewModel.currentAmPm.collectAsState()
   val weekday by viewModel.currentWeekdayFormatted.collectAsState()
   val dateFormatted by viewModel.currentDateFormatted.collectAsState()
+  val settings by viewModel.settings.collectAsState()
+
+  val currentTheme = AmbientTheme.fromName(settings.ambientTheme)
+  val animatedBackgroundColor by animateColorAsState(
+    targetValue = currentTheme.backgroundColor,
+    animationSpec = tween(durationMillis = 350),
+    label = "ambient_bg_color"
+  )
 
   val configuration = LocalConfiguration.current
   val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -47,97 +66,143 @@ fun DeskClockScreen(
   BoxWithConstraints(
     modifier = modifier
       .fillMaxSize()
-      .background(CanvasBlack)
+      .background(animatedBackgroundColor)
       .statusBarsPadding()
-      .padding(horizontal = 16.dp, vertical = 8.dp)
+      .padding(
+        horizontal = if (isLandscape) 12.dp else 16.dp,
+        vertical = if (isLandscape) 2.dp else 8.dp
+      )
   ) {
     if (isLandscape) {
-      // LANDSCAPE MODE: Hours on Left, Minutes on Right side-by-side
-      val cardW = ((maxWidth - 64.dp) / 2).coerceIn(180.dp, 380.dp)
-      val cardH = (maxHeight - 48.dp).coerceIn(140.dp, 300.dp)
-      val fontSz = (cardH.value * 0.94f).sp
+      // LANDSCAPE MODE: Digits expand to take up 100% of available screen space
+      val availableHeight = (maxHeight - 36.dp).coerceAtLeast(120.dp)
+      val availableWidth = ((maxWidth - 16.dp) / 2).coerceAtLeast(160.dp)
 
-      Row(
-        modifier = Modifier
-          .fillMaxSize()
-          .align(Alignment.Center),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+      val fontSzFromHeight = availableHeight.value * 0.98f
+      val fontSzFromWidth = (availableWidth.value / 1.18f)
+      val fontSz = minOf(fontSzFromHeight, fontSzFromWidth).sp
+
+      Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.SpaceBetween
       ) {
-        // Left Column: Date above, Hours, AM/PM below
-        Column(
-          modifier = Modifier.weight(1f),
-          horizontalAlignment = Alignment.CenterHorizontally,
-          verticalArrangement = Arrangement.Center
+        // Top Header Row in Landscape: Date, Ambient Theme Cycler Pill, Weekday
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
         ) {
           Text(
             text = dateFormatted,
-            style = MetaLabelStyle,
-            modifier = Modifier.padding(bottom = 6.dp)
+            style = MetaLabelStyle
           )
 
-          FlipCard(
-            value = hours,
-            cardWidth = cardW,
-            cardHeight = cardH,
-            fontSize = fontSz,
-            onFlipSound = { viewModel.soundHelper.playMechanicalClick() }
-          )
-
-          Box(
+          // Subtle ambient background theme cycler pill
+          Row(
             modifier = Modifier
-              .width(cardW)
-              .padding(top = 4.dp),
-            contentAlignment = Alignment.CenterStart
+              .clip(RoundedCornerShape(14.dp))
+              .background(currentTheme.pillSurfaceColor)
+              .border(0.5.dp, HairlineDivider, RoundedCornerShape(14.dp))
+              .clickable { viewModel.cycleAmbientTheme() }
+              .padding(horizontal = 10.dp, vertical = 4.dp)
+              .testTag("theme_cycler_btn_landscape"),
+            verticalAlignment = Alignment.CenterVertically
           ) {
+            Box(
+              modifier = Modifier
+                .size(7.dp)
+                .clip(CircleShape)
+                .background(currentTheme.accentColor)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
             Text(
-              text = amPm,
+              text = currentTheme.displayName,
+              color = FlapBone,
+              fontSize = 11.sp,
               style = MetaLabelStyle
             )
           }
-        }
 
-        Spacer(modifier = Modifier.width(16.dp))
-
-        // Right Column: Weekday above, Minutes, Running Seconds below-right
-        Column(
-          modifier = Modifier.weight(1f),
-          horizontalAlignment = Alignment.CenterHorizontally,
-          verticalArrangement = Arrangement.Center
-        ) {
           Text(
             text = weekday,
-            style = MetaLabelStyle,
-            modifier = Modifier.padding(bottom = 6.dp)
+            style = MetaLabelStyle
           )
+        }
 
-          FlipCard(
-            value = minutes,
-            cardWidth = cardW,
-            cardHeight = cardH,
-            fontSize = fontSz,
-            onFlipSound = { viewModel.soundHelper.playMechanicalClick() }
-          )
-
-          Box(
-            modifier = Modifier
-              .width(cardW)
-              .padding(top = 4.dp),
-            contentAlignment = Alignment.CenterEnd
+        // Center Area: Hours on Left, Minutes on Right side-by-side
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f),
+          horizontalArrangement = Arrangement.Center,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          // Left Column: Hours + AM/PM
+          Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
           ) {
-            Text(
-              text = secondsFormatted,
-              style = RunningSecondsStyle
+            FlipCard(
+              value = hours,
+              cardWidth = availableWidth,
+              cardHeight = availableHeight,
+              fontSize = fontSz,
+              backgroundColor = animatedBackgroundColor,
+              onFlipSound = { viewModel.soundHelper.playMechanicalClick() }
             )
+
+            Box(
+              modifier = Modifier
+                .width(availableWidth)
+                .padding(top = 2.dp),
+              contentAlignment = Alignment.CenterStart
+            ) {
+              Text(
+                text = amPm,
+                style = MetaLabelStyle
+              )
+            }
+          }
+
+          Spacer(modifier = Modifier.width(12.dp))
+
+          // Right Column: Minutes + Running Seconds
+          Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+          ) {
+            FlipCard(
+              value = minutes,
+              cardWidth = availableWidth,
+              cardHeight = availableHeight,
+              fontSize = fontSz,
+              backgroundColor = animatedBackgroundColor,
+              onFlipSound = { viewModel.soundHelper.playMechanicalClick() }
+            )
+
+            Box(
+              modifier = Modifier
+                .width(availableWidth)
+                .padding(top = 2.dp),
+              contentAlignment = Alignment.CenterEnd
+            ) {
+              Text(
+                text = secondsFormatted,
+                style = RunningSecondsStyle
+              )
+            }
           }
         }
       }
     } else {
-      // PORTRAIT MODE: Exactly two frameless digit groups stacked vertically
-      // Hours on top, Minutes on bottom.
-      val cardW = (maxWidth - 32.dp).coerceIn(240.dp, 380.dp)
-      val cardH = ((maxHeight - 140.dp) / 2).coerceIn(140.dp, 240.dp)
-      val fontSz = (cardH.value * 0.94f).sp
+      // PORTRAIT MODE: Frameless digit groups stacked vertically filling full space
+      val cardW = (maxWidth - 16.dp).coerceAtLeast(260.dp)
+      val cardH = ((maxHeight - 90.dp) / 2).coerceAtLeast(160.dp)
+      val fontSz = minOf(cardH.value * 0.96f, cardW.value / 1.15f).sp
 
       Column(
         modifier = Modifier
@@ -146,12 +211,45 @@ fun DeskClockScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
       ) {
-        // Above Hours: Centered Date in MM/dd/yy (11/05/26) format
-        Text(
-          text = dateFormatted,
-          style = MetaLabelStyle,
-          modifier = Modifier.padding(bottom = 6.dp)
-        )
+        // Header Row: Date on Left, Subtle Ambient Theme Cycler Pill on Right
+        Row(
+          modifier = Modifier
+            .width(cardW)
+            .padding(bottom = 6.dp),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(
+            text = dateFormatted,
+            style = MetaLabelStyle
+          )
+
+          // Subtle ambient background theme cycler badge
+          Row(
+            modifier = Modifier
+              .clip(RoundedCornerShape(14.dp))
+              .background(currentTheme.pillSurfaceColor)
+              .border(0.5.dp, HairlineDivider, RoundedCornerShape(14.dp))
+              .clickable { viewModel.cycleAmbientTheme() }
+              .padding(horizontal = 9.dp, vertical = 4.dp)
+              .testTag("theme_cycler_btn"),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Box(
+              modifier = Modifier
+                .size(7.dp)
+                .clip(CircleShape)
+                .background(currentTheme.accentColor)
+            )
+            Spacer(modifier = Modifier.width(5.dp))
+            Text(
+              text = currentTheme.displayName,
+              color = FlapBone,
+              fontSize = 11.sp,
+              style = MetaLabelStyle
+            )
+          }
+        }
 
         // Upper Frameless Digits: Hours
         FlipCard(
@@ -159,6 +257,7 @@ fun DeskClockScreen(
           cardWidth = cardW,
           cardHeight = cardH,
           fontSize = fontSz,
+          backgroundColor = animatedBackgroundColor,
           onFlipSound = { viewModel.soundHelper.playMechanicalClick() }
         )
 
@@ -166,7 +265,7 @@ fun DeskClockScreen(
         Box(
           modifier = Modifier
             .width(cardW)
-            .padding(top = 4.dp, bottom = 12.dp),
+            .padding(top = 4.dp, bottom = 10.dp),
           contentAlignment = Alignment.CenterStart
         ) {
           Text(
@@ -175,7 +274,7 @@ fun DeskClockScreen(
           )
         }
 
-        // Above Minutes: Centered Day of Week (Thursday, sentence case)
+        // Above Minutes: Centered Day of Week
         Text(
           text = weekday,
           style = MetaLabelStyle,
@@ -188,10 +287,11 @@ fun DeskClockScreen(
           cardWidth = cardW,
           cardHeight = cardH,
           fontSize = fontSz,
+          backgroundColor = animatedBackgroundColor,
           onFlipSound = { viewModel.soundHelper.playMechanicalClick() }
         )
 
-        // Below Minutes: Bottom-right running 2-digit seconds counter (28.sp FlapBone)
+        // Below Minutes: Bottom-right running 2-digit seconds counter
         Box(
           modifier = Modifier
             .width(cardW)

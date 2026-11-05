@@ -1,6 +1,9 @@
 package com.rayhan09niloy.clockapp.screens
 
 import android.content.res.Configuration
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +24,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flag
@@ -31,13 +35,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -80,17 +88,17 @@ fun StopwatchScreen(
       .padding(horizontal = 20.dp)
   ) {
     if (isLandscape) {
-      // LANDSCAPE MODE: Digits and controls on left, laps list on right
+      // LANDSCAPE MODE: Digits and controls on left, laps list top-aligned on right
       Row(
         modifier = Modifier
           .fillMaxSize()
-          .padding(bottom = 60.dp),
-        horizontalArrangement = Arrangement.spacedBy(20.dp),
-        verticalAlignment = Alignment.CenterVertically
+          .padding(top = 12.dp, bottom = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(24.dp),
+        verticalAlignment = Alignment.Top
       ) {
         Column(
           modifier = Modifier
-            .weight(1.1f)
+            .weight(1.05f)
             .fillMaxHeight(),
           horizontalAlignment = Alignment.CenterHorizontally,
           verticalArrangement = Arrangement.Center
@@ -122,11 +130,12 @@ fun StopwatchScreen(
           )
         }
 
-        // Right side: Laps list separated by 1.dp hairline dividers
+        // Right side: Laps list aligned to the top (newest lap visible at top)
         Box(
           modifier = Modifier
-            .weight(0.9f)
+            .weight(0.95f)
             .fillMaxHeight()
+            .padding(top = 8.dp)
         ) {
           LapListContent(laps = laps)
         }
@@ -134,9 +143,7 @@ fun StopwatchScreen(
     } else {
       // PORTRAIT MODE: Digits top, controls middle, laps bottom
       Column(
-        modifier = Modifier
-          .fillMaxSize()
-          .padding(bottom = 64.dp),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
       ) {
         Spacer(modifier = Modifier.height(16.dp))
@@ -280,8 +287,21 @@ private fun StopwatchControlsRow(
 private fun LapListContent(
   laps: List<StopwatchLap>
 ) {
-  Column(modifier = Modifier.fillMaxSize()) {
-    // Untracked sentence-case column headers in MetaMuted (Floor #9)
+  val listState = rememberLazyListState()
+
+  // Ensure newest recorded lap (index 0) is immediately pinned at the top row
+  LaunchedEffect(laps.firstOrNull()?.lapNumber) {
+    if (laps.isNotEmpty()) {
+      listState.scrollToItem(0)
+    }
+  }
+
+  Column(
+    modifier = Modifier.fillMaxSize(),
+    verticalArrangement = Arrangement.Top,
+    horizontalAlignment = Alignment.Start
+  ) {
+    // Untracked sentence-case column headers in MetaMuted
     Row(
       modifier = Modifier
         .fillMaxWidth()
@@ -304,7 +324,8 @@ private fun LapListContent(
     if (laps.isEmpty()) {
       Box(
         modifier = Modifier
-          .fillMaxSize()
+          .fillMaxWidth()
+          .weight(1f)
           .padding(vertical = 20.dp),
         contentAlignment = Alignment.Center
       ) {
@@ -316,53 +337,118 @@ private fun LapListContent(
         )
       }
     } else {
+      // Remember initial highest lap so only newly inserted laps trigger the fade-in animation
+      val initialHighestLap = remember { laps.firstOrNull()?.lapNumber ?: 0 }
+
       LazyColumn(
-        modifier = Modifier.fillMaxSize()
+        state = listState,
+        modifier = Modifier
+          .fillMaxWidth()
+          .weight(1f),
+        verticalArrangement = Arrangement.Top
       ) {
         items(laps, key = { it.lapNumber }) { lap ->
-          Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-              modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Text(
-                text = String.format(Locale.US, "#%02d", lap.lapNumber),
-                style = MetaLabelStyle,
-                color = MetaMuted,
-                fontSize = 13.sp
-              )
-              Text(
-                text = formatLapMillis(lap.lapTimeMillis),
-                style = FlipDigitStyle.copy(fontSize = 14.sp),
-                color = FlapBone
-              )
-              Text(
-                text = formatLapMillis(lap.splitTimeMillis),
-                style = FlipDigitStyle.copy(fontSize = 14.sp),
-                color = MetaMuted
-              )
-            }
+          val isLatest = lap.lapNumber == laps.firstOrNull()?.lapNumber
+          val isNewInsertion = lap.lapNumber > initialHighestLap
 
-            // 1.dp row divider directly on CanvasBlack
-            Box(
-              modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(HairlineDivider)
-            )
-          }
+          LapRowItem(
+            lap = lap,
+            isLatest = isLatest,
+            shouldFadeIn = isNewInsertion,
+            modifier = Modifier.animateItem()
+          )
         }
       }
     }
   }
 }
 
+@Composable
+private fun LapRowItem(
+  lap: StopwatchLap,
+  isLatest: Boolean,
+  shouldFadeIn: Boolean,
+  modifier: Modifier = Modifier
+) {
+  // Subtle CSS-style cubic-bezier fade-in animation for newly inserted lap rows
+  val alphaAnim = remember(lap.lapNumber) {
+    Animatable(if (shouldFadeIn) 0f else 1f)
+  }
+  val offsetYAnim = remember(lap.lapNumber) {
+    Animatable(if (shouldFadeIn) -10f else 0f)
+  }
+
+  LaunchedEffect(lap.lapNumber) {
+    if (shouldFadeIn) {
+      coroutineScope {
+        launch {
+          alphaAnim.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(
+              durationMillis = 350,
+              easing = FastOutSlowInEasing
+            )
+          )
+        }
+        launch {
+          offsetYAnim.animateTo(
+            targetValue = 0f,
+            animationSpec = tween(
+              durationMillis = 300,
+              easing = FastOutSlowInEasing
+            )
+          )
+        }
+      }
+    }
+  }
+
+  Column(
+    modifier = modifier
+      .fillMaxWidth()
+      .graphicsLayer {
+        alpha = alphaAnim.value
+        translationY = offsetYAnim.value
+      }
+  ) {
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(vertical = 12.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      Text(
+        text = String.format(Locale.US, "#%02d", lap.lapNumber),
+        style = MetaLabelStyle,
+        color = if (isLatest) SignalAmber else MetaMuted,
+        fontSize = 13.sp
+      )
+      Text(
+        text = formatLapMillis(lap.lapTimeMillis),
+        style = FlipDigitStyle.copy(fontSize = 14.sp),
+        color = if (isLatest) SignalAmber else FlapBone
+      )
+      Text(
+        text = formatLapMillis(lap.splitTimeMillis),
+        style = FlipDigitStyle.copy(fontSize = 14.sp),
+        color = MetaMuted
+      )
+    }
+
+    // 1.dp row divider directly on CanvasBlack
+    Box(
+      modifier = Modifier
+        .fillMaxWidth()
+        .height(1.dp)
+        .background(HairlineDivider)
+    )
+  }
+}
+
 private fun formatLapMillis(millis: Long): String {
-  val m = millis / 60000
-  val s = (millis % 60000) / 1000
-  val h = (millis % 1000) / 10
-  return String.format(Locale.US, "%02d:%02d.%02d", m, s, h)
+  val minutes = (millis / 60000)
+  val seconds = (millis % 60000) / 1000
+  val hundredths = (millis % 1000) / 10
+  return String.format(Locale.US, "%02d:%02d.%02d", minutes, seconds, hundredths)
 }
