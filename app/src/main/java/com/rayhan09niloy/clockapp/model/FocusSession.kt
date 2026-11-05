@@ -1,4 +1,4 @@
-package com.example.model
+package com.rayhan09niloy.clockapp.model
 
 import java.util.UUID
 

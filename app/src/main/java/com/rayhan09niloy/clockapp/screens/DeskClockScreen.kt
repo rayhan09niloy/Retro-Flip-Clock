@@ -1,4 +1,4 @@
-package com.example.screens
+package com.rayhan09niloy.clockapp.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -51,18 +51,18 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.components.FlipCard
-import com.example.ui.theme.AmberAccent
-import com.example.ui.theme.AntonFontFamily
-import com.example.ui.theme.BebasNeueFontFamily
-import com.example.ui.theme.CardBorder
-import com.example.ui.theme.DarkCharcoal
-import com.example.ui.theme.DarkCharcoalElevated
-import com.example.ui.theme.OledBlack
-import com.example.ui.theme.PrimaryText
-import com.example.ui.theme.RobotoMonoFontFamily
-import com.example.ui.theme.SecondaryText
-import com.example.viewmodel.ClockViewModel
+import com.rayhan09niloy.clockapp.components.FlipCard
+import com.rayhan09niloy.clockapp.ui.theme.AmberAccent
+import com.rayhan09niloy.clockapp.ui.theme.AntonFontFamily
+import com.rayhan09niloy.clockapp.ui.theme.BebasNeueFontFamily
+import com.rayhan09niloy.clockapp.ui.theme.CardBorder
+import com.rayhan09niloy.clockapp.ui.theme.DarkCharcoal
+import com.rayhan09niloy.clockapp.ui.theme.DarkCharcoalElevated
+import com.rayhan09niloy.clockapp.ui.theme.OledBlack
+import com.rayhan09niloy.clockapp.ui.theme.PrimaryText
+import com.rayhan09niloy.clockapp.ui.theme.RobotoMonoFontFamily
+import com.rayhan09niloy.clockapp.ui.theme.SecondaryText
+import com.rayhan09niloy.clockapp.viewmodel.ClockViewModel
 import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -489,8 +489,8 @@ fun DeskClockScreen(
 
 @Composable
 private fun ClockSettingsSheetContent(
-  settings: com.example.model.ClockSettings,
-  onUpdateSettings: ((com.example.model.ClockSettings) -> com.example.model.ClockSettings) -> Unit,
+  settings: com.rayhan09niloy.clockapp.model.ClockSettings,
+  onUpdateSettings: ((com.rayhan09niloy.clockapp.model.ClockSettings) -> com.rayhan09niloy.clockapp.model.ClockSettings) -> Unit,
   onSetSleepTimer: (Int) -> Unit,
   onDismiss: () -> Unit
 ) {

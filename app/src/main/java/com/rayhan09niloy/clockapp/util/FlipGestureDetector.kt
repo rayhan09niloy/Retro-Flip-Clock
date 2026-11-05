@@ -1,4 +1,4 @@
-package com.example.util
+package com.rayhan09niloy.clockapp.util
 
 import android.content.Context
 import android.hardware.Sensor

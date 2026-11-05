@@ -1,7 +1,7 @@
-package com.example
+package com.rayhan09niloy.clockapp
 
-import com.example.model.AlarmItem
-import com.example.model.WorldCity
+import com.rayhan09niloy.clockapp.model.AlarmItem
+import com.rayhan09niloy.clockapp.model.WorldCity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

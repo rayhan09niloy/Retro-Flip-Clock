@@ -1,4 +1,4 @@
-package com.example.components
+package com.rayhan09niloy.clockapp.components
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
@@ -36,10 +36,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.AmberAccent
-import com.example.ui.theme.CardBorder
-import com.example.ui.theme.DarkCharcoal
-import com.example.ui.theme.SecondaryText
+import com.rayhan09niloy.clockapp.ui.theme.AmberAccent
+import com.rayhan09niloy.clockapp.ui.theme.CardBorder
+import com.rayhan09niloy.clockapp.ui.theme.DarkCharcoal
+import com.rayhan09niloy.clockapp.ui.theme.SecondaryText
 
 enum class ClockTab(val title: String, val icon: ImageVector) {
   CLOCK("Clock", Icons.Default.AccessTime),

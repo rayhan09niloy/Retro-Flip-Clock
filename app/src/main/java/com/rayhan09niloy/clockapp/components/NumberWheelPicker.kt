@@ -1,4 +1,4 @@
-package com.example.components
+package com.rayhan09niloy.clockapp.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -29,10 +29,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.AmberAccent
-import com.example.ui.theme.PrimaryText
-import com.example.ui.theme.RobotoMonoFontFamily
-import com.example.ui.theme.SecondaryText
+import com.rayhan09niloy.clockapp.ui.theme.AmberAccent
+import com.rayhan09niloy.clockapp.ui.theme.PrimaryText
+import com.rayhan09niloy.clockapp.ui.theme.RobotoMonoFontFamily
+import com.rayhan09niloy.clockapp.ui.theme.SecondaryText
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -41,7 +41,7 @@ fun WheelPicker(
   selectedIndex: Int,
   onSelectedIndexChanged: (Int) -> Unit,
   modifier: Modifier = Modifier,
-  fontFamily: androidx.compose.ui.text.font.FontFamily = com.example.ui.theme.PrimaryDisplayFontFamily,
+  fontFamily: androidx.compose.ui.text.font.FontFamily = com.rayhan09niloy.clockapp.ui.theme.PrimaryDisplayFontFamily,
   visibleItemCount: Int = 3,
   itemHeight: Dp = 44.dp,
   itemWidth: Dp = 64.dp

@@ -1,4 +1,4 @@
-package com.example.screens
+package com.rayhan09niloy.clockapp.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,18 +43,18 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.model.StopwatchLap
-import com.example.ui.theme.AmberAccent
-import com.example.ui.theme.CardBorder
-import com.example.ui.theme.DarkCharcoal
-import com.example.ui.theme.DarkCharcoalElevated
-import com.example.ui.theme.GreenAccent
-import com.example.ui.theme.OledBlack
-import com.example.ui.theme.PrimaryText
-import com.example.ui.theme.RedAccent
-import com.example.ui.theme.RobotoMonoFontFamily
-import com.example.ui.theme.SecondaryText
-import com.example.viewmodel.ClockViewModel
+import com.rayhan09niloy.clockapp.model.StopwatchLap
+import com.rayhan09niloy.clockapp.ui.theme.AmberAccent
+import com.rayhan09niloy.clockapp.ui.theme.CardBorder
+import com.rayhan09niloy.clockapp.ui.theme.DarkCharcoal
+import com.rayhan09niloy.clockapp.ui.theme.DarkCharcoalElevated
+import com.rayhan09niloy.clockapp.ui.theme.GreenAccent
+import com.rayhan09niloy.clockapp.ui.theme.OledBlack
+import com.rayhan09niloy.clockapp.ui.theme.PrimaryText
+import com.rayhan09niloy.clockapp.ui.theme.RedAccent
+import com.rayhan09niloy.clockapp.ui.theme.RobotoMonoFontFamily
+import com.rayhan09niloy.clockapp.ui.theme.SecondaryText
+import com.rayhan09niloy.clockapp.viewmodel.ClockViewModel
 import java.util.Locale
 
 @Composable
@@ -76,9 +76,9 @@ fun StopwatchScreen(
 
   val settings by viewModel.settings.collectAsState()
   val currentFontFamily = when (settings.fontStyle) {
-    "Anton" -> com.example.ui.theme.AntonFontFamily
-    "Roboto Mono" -> com.example.ui.theme.RobotoMonoFontFamily
-    else -> com.example.ui.theme.BebasNeueFontFamily
+    "Anton" -> com.rayhan09niloy.clockapp.ui.theme.AntonFontFamily
+    "Roboto Mono" -> com.rayhan09niloy.clockapp.ui.theme.RobotoMonoFontFamily
+    else -> com.rayhan09niloy.clockapp.ui.theme.BebasNeueFontFamily
   }
 
   val minLapTime = remember(laps) {

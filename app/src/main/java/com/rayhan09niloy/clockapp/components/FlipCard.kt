@@ -1,4 +1,4 @@
-package com.example.components
+package com.rayhan09niloy.clockapp.components
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
@@ -42,10 +42,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.BebasNeueFontFamily
-import com.example.ui.theme.CardBorder
-import com.example.ui.theme.DarkCharcoal
-import com.example.ui.theme.PrimaryText
+import com.rayhan09niloy.clockapp.ui.theme.BebasNeueFontFamily
+import com.rayhan09niloy.clockapp.ui.theme.CardBorder
+import com.rayhan09niloy.clockapp.ui.theme.DarkCharcoal
+import com.rayhan09niloy.clockapp.ui.theme.PrimaryText
 import kotlinx.coroutines.launch
 
 /**

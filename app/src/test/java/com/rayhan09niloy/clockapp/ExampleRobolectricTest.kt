@@ -1,4 +1,4 @@
-package com.example
+package com.rayhan09niloy.clockapp
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider

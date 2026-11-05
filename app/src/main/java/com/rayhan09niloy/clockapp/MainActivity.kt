@@ -1,4 +1,4 @@
-package com.example
+package com.rayhan09niloy.clockapp
 
 import android.os.Bundle
 import android.view.WindowManager
@@ -19,16 +19,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.components.ClockTab
-import com.example.components.RetroBottomBar
-import com.example.screens.AlarmScreen
-import com.example.screens.DeskClockScreen
-import com.example.screens.StopwatchScreen
-import com.example.screens.TimerScreen
-import com.example.screens.WorldClockScreen
-import com.example.ui.theme.OledBlack
-import com.example.ui.theme.RetroFlipClockTheme
-import com.example.viewmodel.ClockViewModel
+import com.rayhan09niloy.clockapp.components.ClockTab
+import com.rayhan09niloy.clockapp.components.RetroBottomBar
+import com.rayhan09niloy.clockapp.screens.AlarmScreen
+import com.rayhan09niloy.clockapp.screens.DeskClockScreen
+import com.rayhan09niloy.clockapp.screens.StopwatchScreen
+import com.rayhan09niloy.clockapp.screens.TimerScreen
+import com.rayhan09niloy.clockapp.screens.WorldClockScreen
+import com.rayhan09niloy.clockapp.ui.theme.OledBlack
+import com.rayhan09niloy.clockapp.ui.theme.RetroFlipClockTheme
+import com.rayhan09niloy.clockapp.viewmodel.ClockViewModel
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {

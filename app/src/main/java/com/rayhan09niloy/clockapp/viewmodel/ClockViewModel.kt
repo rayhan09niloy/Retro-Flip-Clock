@@ -1,4 +1,4 @@
-package com.example.viewmodel
+package com.rayhan09niloy.clockapp.viewmodel
 
 import android.app.Application
 import android.content.BroadcastReceiver
@@ -9,13 +9,13 @@ import android.content.SharedPreferences
 import android.os.BatteryManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.model.AlarmItem
-import com.example.model.ClockSettings
-import com.example.model.FocusSession
-import com.example.model.StopwatchLap
-import com.example.model.WorldCity
-import com.example.util.FlipGestureDetector
-import com.example.util.SoundHelper
+import com.rayhan09niloy.clockapp.model.AlarmItem
+import com.rayhan09niloy.clockapp.model.ClockSettings
+import com.rayhan09niloy.clockapp.model.FocusSession
+import com.rayhan09niloy.clockapp.model.StopwatchLap
+import com.rayhan09niloy.clockapp.model.WorldCity
+import com.rayhan09niloy.clockapp.util.FlipGestureDetector
+import com.rayhan09niloy.clockapp.util.SoundHelper
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

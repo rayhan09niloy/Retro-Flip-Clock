@@ -1,4 +1,4 @@
-package com.example.model
+package com.rayhan09niloy.clockapp.model
 
 data class StopwatchLap(
   val lapNumber: Int,

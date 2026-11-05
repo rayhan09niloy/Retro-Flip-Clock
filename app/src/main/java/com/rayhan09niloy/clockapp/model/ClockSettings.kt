@@ -1,4 +1,4 @@
-package com.example.model
+package com.rayhan09niloy.clockapp.model
 
 data class ClockSettings(
   val flipAnimationEnabled: Boolean = true,
