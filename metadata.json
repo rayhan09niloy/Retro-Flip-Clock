@@ -1,0 +1,6 @@
+{
+  "name": "Retro Flip Clock",
+  "description": "Productivity clock app combining retro flip-clock aesthetics with ambient desk mode, world clock, focus timer, alarms, and stopwatch.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
