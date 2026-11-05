@@ -1,8 +1,10 @@
 package com.rayhan09niloy.clockapp.screens
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -20,17 +22,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,22 +37,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rayhan09niloy.clockapp.model.StopwatchLap
-import com.rayhan09niloy.clockapp.ui.theme.AmberAccent
-import com.rayhan09niloy.clockapp.ui.theme.CardBorder
-import com.rayhan09niloy.clockapp.ui.theme.DarkCharcoal
-import com.rayhan09niloy.clockapp.ui.theme.DarkCharcoalElevated
-import com.rayhan09niloy.clockapp.ui.theme.GreenAccent
-import com.rayhan09niloy.clockapp.ui.theme.OledBlack
-import com.rayhan09niloy.clockapp.ui.theme.PrimaryText
-import com.rayhan09niloy.clockapp.ui.theme.RedAccent
-import com.rayhan09niloy.clockapp.ui.theme.RobotoMonoFontFamily
-import com.rayhan09niloy.clockapp.ui.theme.SecondaryText
+import com.rayhan09niloy.clockapp.ui.theme.CanvasBlack
+import com.rayhan09niloy.clockapp.ui.theme.FlipDigitStyle
+import com.rayhan09niloy.clockapp.ui.theme.FlapBone
+import com.rayhan09niloy.clockapp.ui.theme.HairlineDivider
+import com.rayhan09niloy.clockapp.ui.theme.MetaLabelStyle
+import com.rayhan09niloy.clockapp.ui.theme.MetaMuted
+import com.rayhan09niloy.clockapp.ui.theme.SignalAmber
 import com.rayhan09niloy.clockapp.viewmodel.ClockViewModel
 import java.util.Locale
 
@@ -66,7 +62,6 @@ fun StopwatchScreen(
   val isRunning by viewModel.isStopwatchRunning.collectAsState()
   val laps by viewModel.stopwatchLaps.collectAsState()
 
-  // Format main time
   val minutes = (elapsedMillis / 60000)
   val seconds = (elapsedMillis % 60000) / 1000
   val hundredths = (elapsedMillis % 1000) / 10
@@ -74,45 +69,31 @@ fun StopwatchScreen(
   val mainDisplay = String.format(Locale.US, "%02d:%02d", minutes, seconds)
   val hundredthsDisplay = String.format(Locale.US, ".%02d", hundredths)
 
-  val settings by viewModel.settings.collectAsState()
-  val currentFontFamily = when (settings.fontStyle) {
-    "Anton" -> com.rayhan09niloy.clockapp.ui.theme.AntonFontFamily
-    "Roboto Mono" -> com.rayhan09niloy.clockapp.ui.theme.RobotoMonoFontFamily
-    else -> com.rayhan09niloy.clockapp.ui.theme.BebasNeueFontFamily
-  }
-
-  val minLapTime = remember(laps) {
-    if (laps.size >= 2) laps.minOfOrNull { it.lapTimeMillis } else null
-  }
-  val maxLapTime = remember(laps) {
-    if (laps.size >= 2) laps.maxOfOrNull { it.lapTimeMillis } else null
-  }
+  val configuration = LocalConfiguration.current
+  val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
   BoxWithConstraints(
     modifier = modifier
       .fillMaxSize()
-      .background(OledBlack)
+      .background(CanvasBlack)
       .statusBarsPadding()
-      .padding(horizontal = 16.dp)
+      .padding(horizontal = 20.dp)
   ) {
-    val isLandscape = maxWidth > maxHeight
-
     if (isLandscape) {
-      // LANDSCAPE: SIDE BY SIDE (Left: Giant Timer & Controls, Right: Laps Table)
+      // LANDSCAPE MODE: Digits and controls on left, laps list on right
       Row(
         modifier = Modifier
           .fillMaxSize()
           .padding(bottom = 60.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
         verticalAlignment = Alignment.CenterVertically
       ) {
-        // Left Column: Digits + Controls
         Column(
           modifier = Modifier
             .weight(1.1f)
             .fillMaxHeight(),
           horizontalAlignment = Alignment.CenterHorizontally,
-          verticalArrangement = Arrangement.SpaceEvenly
+          verticalArrangement = Arrangement.Center
         ) {
           Row(
             verticalAlignment = Alignment.Bottom,
@@ -120,241 +101,92 @@ fun StopwatchScreen(
           ) {
             Text(
               text = mainDisplay,
-              color = PrimaryText,
-              fontSize = 72.sp,
-              fontFamily = currentFontFamily,
-              fontWeight = FontWeight.Bold,
-              letterSpacing = 1.sp
+              style = FlipDigitStyle.copy(fontSize = 68.sp)
             )
             Text(
               text = hundredthsDisplay,
-              color = AmberAccent,
-              fontSize = 38.sp,
-              fontFamily = currentFontFamily,
-              fontWeight = FontWeight.Bold,
+              style = FlipDigitStyle.copy(fontSize = 36.sp, color = SignalAmber),
               modifier = Modifier.padding(bottom = 6.dp)
             )
           }
 
-          // Controls Row
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            IconButton(
-              onClick = { viewModel.resetStopwatch() },
-              enabled = elapsedMillis > 0,
-              modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(DarkCharcoal)
-                .border(1.dp, CardBorder, CircleShape)
-                .testTag("stopwatch_reset_btn")
-            ) {
-              Icon(
-                imageVector = Icons.Default.Refresh,
-                contentDescription = "Reset",
-                tint = if (elapsedMillis > 0) PrimaryText else SecondaryText.copy(alpha = 0.4f),
-                modifier = Modifier.size(22.dp)
-              )
-            }
+          Spacer(modifier = Modifier.height(24.dp))
 
-            Box(
-              modifier = Modifier
-                .size(72.dp)
-                .clip(CircleShape)
-                .background(if (isRunning) AmberAccent else Color(0xFFEDEDED))
-                .clickable { viewModel.toggleStopwatch() }
-                .testTag("stopwatch_play_pause_btn"),
-              contentAlignment = Alignment.Center
-            ) {
-              Icon(
-                imageVector = if (isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
-                contentDescription = if (isRunning) "Pause" else "Start",
-                tint = OledBlack,
-                modifier = Modifier.size(38.dp)
-              )
-            }
-
-            IconButton(
-              onClick = { viewModel.recordLap() },
-              enabled = isRunning,
-              modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(DarkCharcoal)
-                .border(1.dp, CardBorder, CircleShape)
-                .testTag("stopwatch_lap_btn")
-            ) {
-              Icon(
-                imageVector = Icons.Default.Flag,
-                contentDescription = "Lap",
-                tint = if (isRunning) AmberAccent else SecondaryText.copy(alpha = 0.4f),
-                modifier = Modifier.size(22.dp)
-              )
-            }
-          }
+          // Controls
+          StopwatchControlsRow(
+            elapsedMillis = elapsedMillis,
+            isRunning = isRunning,
+            onReset = { viewModel.resetStopwatch() },
+            onToggle = { viewModel.toggleStopwatch() },
+            onLap = { viewModel.recordLap() }
+          )
         }
 
-        // Right Column: Laps Table
-        Card(
+        // Right side: Laps list separated by 1.dp hairline dividers
+        Box(
           modifier = Modifier
             .weight(0.9f)
             .fillMaxHeight()
-            .clip(RoundedCornerShape(16.dp))
-            .border(1.dp, CardBorder, RoundedCornerShape(16.dp)),
-          colors = CardDefaults.cardColors(containerColor = DarkCharcoal)
         ) {
-          LapListContent(
-            laps = laps,
-            minLapTime = minLapTime,
-            maxLapTime = maxLapTime
-          )
+          LapListContent(laps = laps)
         }
       }
     } else {
-      // PORTRAIT LAYOUT
+      // PORTRAIT MODE: Digits top, controls middle, laps bottom
       Column(
         modifier = Modifier
           .fillMaxSize()
-          .padding(bottom = 76.dp),
+          .padding(bottom = 64.dp),
         horizontalAlignment = Alignment.CenterHorizontally
       ) {
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
           text = "Stopwatch",
-          color = PrimaryText,
-          fontSize = 28.sp,
+          color = FlapBone,
+          fontSize = 24.sp,
           fontWeight = FontWeight.Bold,
           modifier = Modifier.align(Alignment.Start)
         )
 
-        // Center Screen Digits
         Box(
           modifier = Modifier
             .fillMaxWidth()
-            .weight(0.9f),
+            .weight(0.85f),
           contentAlignment = Alignment.Center
         ) {
-          Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(
-              verticalAlignment = Alignment.Bottom,
-              horizontalArrangement = Arrangement.Center
-            ) {
-              Text(
-                text = mainDisplay,
-                color = PrimaryText,
-                fontSize = 86.sp,
-                fontFamily = currentFontFamily,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp
-              )
-              Text(
-                text = hundredthsDisplay,
-                color = AmberAccent,
-                fontSize = 44.sp,
-                fontFamily = currentFontFamily,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-              )
-            }
-
-            if (laps.isNotEmpty()) {
-              val currentLapElapsed = laps.firstOrNull()?.let {
-                elapsedMillis - it.splitTimeMillis
-              } ?: elapsedMillis
-              val lapM = currentLapElapsed / 60000
-              val lapS = (currentLapElapsed % 60000) / 1000
-              val lapH = (currentLapElapsed % 1000) / 10
-              Text(
-                text = String.format(Locale.US, "Lap %d  %02d:%02d.%02d", laps.size + 1, lapM, lapS, lapH),
-                color = SecondaryText,
-                fontSize = 15.sp,
-                fontFamily = RobotoMonoFontFamily,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(top = 8.dp)
-              )
-            }
-          }
-        }
-
-        // Controls Row
-        Row(
-          modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 14.dp),
-          horizontalArrangement = Arrangement.SpaceEvenly,
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          IconButton(
-            onClick = { viewModel.resetStopwatch() },
-            enabled = elapsedMillis > 0,
-            modifier = Modifier
-              .size(54.dp)
-              .clip(CircleShape)
-              .background(DarkCharcoal)
-              .border(1.dp, CardBorder, CircleShape)
-              .testTag("stopwatch_reset_btn")
+          Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.Center
           ) {
-            Icon(
-              imageVector = Icons.Default.Refresh,
-              contentDescription = "Reset",
-              tint = if (elapsedMillis > 0) PrimaryText else SecondaryText.copy(alpha = 0.4f),
-              modifier = Modifier.size(24.dp)
+            Text(
+              text = mainDisplay,
+              style = FlipDigitStyle.copy(fontSize = 82.sp)
             )
-          }
-
-          Box(
-            modifier = Modifier
-              .size(80.dp)
-              .clip(CircleShape)
-              .background(if (isRunning) AmberAccent else Color(0xFFEDEDED))
-              .clickable { viewModel.toggleStopwatch() }
-              .testTag("stopwatch_play_pause_btn"),
-            contentAlignment = Alignment.Center
-          ) {
-            Icon(
-              imageVector = if (isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
-              contentDescription = if (isRunning) "Pause" else "Start",
-              tint = OledBlack,
-              modifier = Modifier.size(42.dp)
-            )
-          }
-
-          IconButton(
-            onClick = { viewModel.recordLap() },
-            enabled = isRunning,
-            modifier = Modifier
-              .size(54.dp)
-              .clip(CircleShape)
-              .background(DarkCharcoal)
-              .border(1.dp, CardBorder, CircleShape)
-              .testTag("stopwatch_lap_btn")
-          ) {
-            Icon(
-              imageVector = Icons.Default.Flag,
-              contentDescription = "Lap",
-              tint = if (isRunning) AmberAccent else SecondaryText.copy(alpha = 0.4f),
-              modifier = Modifier.size(24.dp)
+            Text(
+              text = hundredthsDisplay,
+              style = FlipDigitStyle.copy(fontSize = 42.sp, color = SignalAmber),
+              modifier = Modifier.padding(bottom = 6.dp)
             )
           }
         }
 
-        // Bottom Section: Lap Times
-        Card(
+        StopwatchControlsRow(
+          elapsedMillis = elapsedMillis,
+          isRunning = isRunning,
+          onReset = { viewModel.resetStopwatch() },
+          onToggle = { viewModel.toggleStopwatch() },
+          onLap = { viewModel.recordLap() }
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Laps List directly on CanvasBlack
+        Box(
           modifier = Modifier
             .fillMaxWidth()
-            .weight(1.1f)
-            .clip(RoundedCornerShape(16.dp))
-            .border(1.dp, CardBorder, RoundedCornerShape(16.dp)),
-          colors = CardDefaults.cardColors(containerColor = DarkCharcoal)
+            .weight(1.15f)
         ) {
-          LapListContent(
-            laps = laps,
-            minLapTime = minLapTime,
-            maxLapTime = maxLapTime
-          )
+          LapListContent(laps = laps)
         }
       }
     }
@@ -362,26 +194,112 @@ fun StopwatchScreen(
 }
 
 @Composable
-private fun LapListContent(
-  laps: List<StopwatchLap>,
-  minLapTime: Long?,
-  maxLapTime: Long?
+private fun StopwatchControlsRow(
+  elapsedMillis: Long,
+  isRunning: Boolean,
+  onReset: () -> Unit,
+  onToggle: () -> Unit,
+  onLap: () -> Unit
 ) {
-  Column(
-    modifier = Modifier
-      .fillMaxSize()
-      .padding(horizontal = 14.dp, vertical = 10.dp)
+  Row(
+    horizontalArrangement = Arrangement.Center,
+    verticalAlignment = Alignment.CenterVertically
   ) {
+    // Reset
+    Box(
+      modifier = Modifier
+        .size(52.dp)
+        .clip(CircleShape)
+        .border(1.dp, HairlineDivider, CircleShape)
+        .clickable(
+          enabled = elapsedMillis > 0,
+          interactionSource = remember { MutableInteractionSource() },
+          indication = ripple(bounded = true, color = SignalAmber)
+        ) { onReset() }
+        .testTag("stopwatch_reset_btn"),
+      contentAlignment = Alignment.Center
+    ) {
+      Icon(
+        imageVector = Icons.Default.Refresh,
+        contentDescription = "Reset",
+        tint = if (elapsedMillis > 0) MetaMuted else HairlineDivider,
+        modifier = Modifier.size(22.dp)
+      )
+    }
+
+    Spacer(modifier = Modifier.width(28.dp))
+
+    // Play/Pause
+    Box(
+      modifier = Modifier
+        .size(68.dp)
+        .clip(CircleShape)
+        .background(if (isRunning) SignalAmber else FlapBone)
+        .clickable(
+          interactionSource = remember { MutableInteractionSource() },
+          indication = ripple(bounded = true, color = CanvasBlack)
+        ) { onToggle() }
+        .testTag("stopwatch_play_pause_btn"),
+      contentAlignment = Alignment.Center
+    ) {
+      Icon(
+        imageVector = if (isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
+        contentDescription = if (isRunning) "Pause" else "Start",
+        tint = CanvasBlack,
+        modifier = Modifier.size(36.dp)
+      )
+    }
+
+    Spacer(modifier = Modifier.width(28.dp))
+
+    // Lap
+    Box(
+      modifier = Modifier
+        .size(52.dp)
+        .clip(CircleShape)
+        .border(1.dp, HairlineDivider, CircleShape)
+        .clickable(
+          enabled = isRunning,
+          interactionSource = remember { MutableInteractionSource() },
+          indication = ripple(bounded = true, color = SignalAmber)
+        ) { onLap() }
+        .testTag("stopwatch_lap_btn"),
+      contentAlignment = Alignment.Center
+    ) {
+      Icon(
+        imageVector = Icons.Default.Flag,
+        contentDescription = "Lap",
+        tint = if (isRunning) MetaMuted else HairlineDivider,
+        modifier = Modifier.size(22.dp)
+      )
+    }
+  }
+}
+
+@Composable
+private fun LapListContent(
+  laps: List<StopwatchLap>
+) {
+  Column(modifier = Modifier.fillMaxSize()) {
+    // Untracked sentence-case column headers in MetaMuted (Floor #9)
     Row(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(bottom = 6.dp),
+        .padding(bottom = 8.dp),
       horizontalArrangement = Arrangement.SpaceBetween
     ) {
-      Text(text = "LAP", color = SecondaryText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-      Text(text = "LAP TIME", color = SecondaryText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-      Text(text = "TOTAL", color = SecondaryText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+      Text(text = "Lap", style = MetaLabelStyle, color = MetaMuted, fontSize = 12.sp)
+      Text(text = "Lap time", style = MetaLabelStyle, color = MetaMuted, fontSize = 12.sp)
+      Text(text = "Total", style = MetaLabelStyle, color = MetaMuted, fontSize = 12.sp)
     }
+
+    // 1.dp hairline header divider
+    Box(
+      modifier = Modifier
+        .fillMaxWidth()
+        .height(1.dp)
+        .background(HairlineDivider)
+    )
 
     if (laps.isEmpty()) {
       Box(
@@ -391,55 +309,49 @@ private fun LapListContent(
         contentAlignment = Alignment.Center
       ) {
         Text(
-          text = "Tap the Flag button to record laps",
-          color = SecondaryText.copy(alpha = 0.7f),
-          fontSize = 12.sp
+          text = "Tap flag button to record laps",
+          style = MetaLabelStyle,
+          color = MetaMuted,
+          fontSize = 13.sp
         )
       }
     } else {
       LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        modifier = Modifier.fillMaxSize()
       ) {
         items(laps, key = { it.lapNumber }) { lap ->
-          val isFastest = minLapTime != null && lap.lapTimeMillis == minLapTime
-          val isSlowest = maxLapTime != null && lap.lapTimeMillis == maxLapTime && minLapTime != maxLapTime
+          Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Text(
+                text = String.format(Locale.US, "#%02d", lap.lapNumber),
+                style = MetaLabelStyle,
+                color = MetaMuted,
+                fontSize = 13.sp
+              )
+              Text(
+                text = formatLapMillis(lap.lapTimeMillis),
+                style = FlipDigitStyle.copy(fontSize = 14.sp),
+                color = FlapBone
+              )
+              Text(
+                text = formatLapMillis(lap.splitTimeMillis),
+                style = FlipDigitStyle.copy(fontSize = 14.sp),
+                color = MetaMuted
+              )
+            }
 
-          val lapColor = when {
-            isFastest -> GreenAccent
-            isSlowest -> RedAccent
-            else -> PrimaryText
-          }
-
-          Row(
-            modifier = Modifier
-              .fillMaxWidth()
-              .clip(RoundedCornerShape(8.dp))
-              .background(DarkCharcoalElevated)
-              .padding(horizontal = 10.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Text(
-              text = String.format(Locale.US, "#%02d", lap.lapNumber),
-              color = SecondaryText,
-              fontSize = 12.sp,
-              fontFamily = RobotoMonoFontFamily,
-              fontWeight = FontWeight.Bold
-            )
-            Text(
-              text = formatLapMillis(lap.lapTimeMillis),
-              color = lapColor,
-              fontSize = 13.sp,
-              fontFamily = RobotoMonoFontFamily,
-              fontWeight = FontWeight.Bold
-            )
-            Text(
-              text = formatLapMillis(lap.splitTimeMillis),
-              color = PrimaryText,
-              fontSize = 13.sp,
-              fontFamily = RobotoMonoFontFamily,
-              fontWeight = FontWeight.Medium
+            // 1.dp row divider directly on CanvasBlack
+            Box(
+              modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(HairlineDivider)
             )
           }
         }

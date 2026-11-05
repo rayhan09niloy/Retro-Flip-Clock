@@ -5,7 +5,6 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.Build
-import android.os.CombinedVibration
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -15,10 +14,6 @@ import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.sin
 
-/**
- * Generates synthetic retro mechanical click/tick sounds and alarm chimes
- * entirely in memory via AudioTrack, with no external asset dependencies.
- */
 class SoundHelper(private val context: Context) {
   private val vibrator: Vibrator? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
     val manager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
@@ -28,7 +23,6 @@ class SoundHelper(private val context: Context) {
     context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
   }
 
-  // Pre-generated mechanical click PCM buffer (16-bit mono 44.1kHz)
   private val clickPcm: ShortArray by lazy {
     val sampleRate = 44100
     val durationMs = 18
@@ -37,7 +31,6 @@ class SoundHelper(private val context: Context) {
     for (i in 0 until numSamples) {
       val progress = i.toFloat() / numSamples
       val envelope = (1f - progress) * (1f - progress)
-      // Crisp mechanical snap: combination of 2.4kHz click and low thud
       val sample = (sin(2.0 * PI * 2400.0 * i / sampleRate) * 0.7 +
           sin(2.0 * PI * 480.0 * i / sampleRate) * 0.3) * envelope
       buffer[i] = (sample * Short.MAX_VALUE * 0.45).toInt().toShort()
@@ -45,7 +38,6 @@ class SoundHelper(private val context: Context) {
     buffer
   }
 
-  // Pre-generated warm chime PCM buffer
   private val chimePcm: ShortArray by lazy {
     val sampleRate = 44100
     val durationMs = 500
@@ -86,7 +78,6 @@ class SoundHelper(private val context: Context) {
 
         track.write(clickPcm, 0, clickPcm.size)
         track.play()
-        // Release after playback finishes
         kotlinx.coroutines.delay(50)
         track.release()
       } catch (_: Exception) {

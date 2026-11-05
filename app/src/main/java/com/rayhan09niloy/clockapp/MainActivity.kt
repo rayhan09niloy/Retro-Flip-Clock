@@ -26,7 +26,7 @@ import com.rayhan09niloy.clockapp.screens.DeskClockScreen
 import com.rayhan09niloy.clockapp.screens.StopwatchScreen
 import com.rayhan09niloy.clockapp.screens.TimerScreen
 import com.rayhan09niloy.clockapp.screens.WorldClockScreen
-import com.rayhan09niloy.clockapp.ui.theme.OledBlack
+import com.rayhan09niloy.clockapp.ui.theme.CanvasBlack
 import com.rayhan09niloy.clockapp.ui.theme.RetroFlipClockTheme
 import com.rayhan09niloy.clockapp.viewmodel.ClockViewModel
 
@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
 
-    // Keep screen on for desk ambient clock mode
+    // Keep screen on for ambient desk clock mode
     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
     setContent {
@@ -64,13 +64,13 @@ fun RetroClockApp(
         onTabSelected = { currentTab = it }
       )
     },
-    containerColor = OledBlack,
+    containerColor = CanvasBlack,
     modifier = Modifier.fillMaxSize()
   ) { innerPadding ->
     Box(
       modifier = Modifier
         .fillMaxSize()
-        .background(OledBlack)
+        .background(CanvasBlack)
         .padding(bottom = innerPadding.calculateBottomPadding())
     ) {
       Crossfade(targetState = currentTab, label = "tab_crossfade") { tab ->

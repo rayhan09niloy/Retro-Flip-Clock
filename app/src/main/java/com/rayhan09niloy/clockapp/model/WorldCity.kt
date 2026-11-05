@@ -11,14 +11,14 @@ data class WorldCity(
   val country: String,
   val timeZoneId: String,
   val temperatureF: Int,
-  val weatherIcon: String // "sunny", "cloudy", "rainy", "night", "clear"
+  val weatherIcon: String
 ) {
   fun getCurrentTime(is24Hour: Boolean): Pair<String, String> {
     val tz = TimeZone.getTimeZone(timeZoneId)
     val cal = Calendar.getInstance(tz)
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     val minute = cal.get(Calendar.MINUTE)
-    val amPm = if (hour >= 12) "PM" else "AM"
+    val amPm = if (hour >= 12) "pm" else "am"
 
     val timeStr = if (is24Hour) {
       String.format(Locale.US, "%02d:%02d", hour, minute)

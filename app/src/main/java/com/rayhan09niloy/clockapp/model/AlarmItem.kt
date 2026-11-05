@@ -33,7 +33,7 @@ data class AlarmItem(
   }
 
   fun getAmPm(): String {
-    return if (hour >= 12) "PM" else "AM"
+    return if (hour >= 12) "pm" else "am"
   }
 
   fun getDaysDisplay(): String {
@@ -66,12 +66,9 @@ data class AlarmItem(
       .joinToString(", ") { names[it] ?: "" }
   }
 
-  /**
-   * Calculates time in milliseconds from now until this alarm will trigger.
-   */
   fun millisUntilNextAlarm(): Long {
     val now = Calendar.getInstance()
-    var target = Calendar.getInstance().apply {
+    val target = Calendar.getInstance().apply {
       set(Calendar.HOUR_OF_DAY, hour)
       set(Calendar.MINUTE, minute)
       set(Calendar.SECOND, 0)

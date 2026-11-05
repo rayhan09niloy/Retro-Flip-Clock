@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#161618"/>
+  <rect x="2" y="2" width="60" height="60" rx="12" stroke="#2B2B30" stroke-width="2"/>
+  <rect x="8" y="10" width="48" height="21" rx="4" fill="#1E1E22"/>
+  <rect x="8" y="33" width="48" height="21" rx="4" fill="#131315"/>
+  <line x1="8" y1="32" x2="56" y2="32" stroke="#060608" stroke-width="2"/>
+  <text x="32" y="44" font-family="'Bebas Neue', sans-serif" font-size="34" font-weight="bold" fill="#FFC107" text-anchor="middle">10</text>
+  <rect x="6" y="29" width="3" height="6" rx="1" fill="#333338"/>
+  <rect x="55" y="29" width="3" height="6" rx="1" fill="#333338"/>
+</svg>

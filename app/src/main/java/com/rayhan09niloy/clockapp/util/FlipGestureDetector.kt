@@ -12,31 +12,29 @@ class FlipGestureDetector(
 ) : SensorEventListener {
   private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
   private val accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-  private var isListening = false
-  private var lastTriggerTime = 0L
+  private var isFaceDown = false
 
   fun start() {
-    if (!isListening && accelerometer != null) {
-      sensorManager?.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
-      isListening = true
+    accelerometer?.let {
+      sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
     }
   }
 
   fun stop() {
-    if (isListening) {
-      sensorManager?.unregisterListener(this)
-      isListening = false
-    }
+    sensorManager?.unregisterListener(this)
   }
 
   override fun onSensorChanged(event: SensorEvent?) {
-    if (event == null || event.sensor.type != Sensor.TYPE_ACCELEROMETER) return
-    val z = event.values[2] // Z axis: positive when screen up, negative when face down
-    val now = System.currentTimeMillis()
-    // When screen points down towards table, z is strongly negative (~ -9.8 m/s^2)
-    if (z < -6.5f && (now - lastTriggerTime > 2000L)) {
-      lastTriggerTime = now
-      onFlipFaceDown()
+    if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
+      val z = event.values[2]
+      // When phone is placed flat face-down, z-axis acceleration is approx -9.8 m/s^2
+      val faceDownNow = z < -7.0f
+      if (faceDownNow && !isFaceDown) {
+        isFaceDown = true
+        onFlipFaceDown()
+      } else if (!faceDownNow) {
+        isFaceDown = false
+      }
     }
   }
 

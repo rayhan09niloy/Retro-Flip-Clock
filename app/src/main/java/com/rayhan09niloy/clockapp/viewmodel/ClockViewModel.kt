@@ -29,7 +29,6 @@ import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import java.util.TimeZone
 
 class ClockViewModel(application: Application) : AndroidViewModel(application) {
   private val prefs: SharedPreferences =
@@ -40,22 +39,27 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
   private val _settings = MutableStateFlow(loadSettings())
   val settings: StateFlow<ClockSettings> = _settings.asStateFlow()
 
-  // --- Live Time State ---
-  private val _currentHours = MutableStateFlow("10")
-  val currentHours: StateFlow<String> = _currentHours.asStateFlow()
+  // --- Live Time State as Integers for FlipCard ---
+  private val _currentHoursInt = MutableStateFlow(10)
+  val currentHoursInt: StateFlow<Int> = _currentHoursInt.asStateFlow()
 
-  private val _currentMinutes = MutableStateFlow("48")
-  val currentMinutes: StateFlow<String> = _currentMinutes.asStateFlow()
+  private val _currentMinutesInt = MutableStateFlow(48)
+  val currentMinutesInt: StateFlow<Int> = _currentMinutesInt.asStateFlow()
 
-  private val _currentSeconds = MutableStateFlow("00")
-  val currentSeconds: StateFlow<String> = _currentSeconds.asStateFlow()
+  private val _currentSecondsInt = MutableStateFlow(0)
+  val currentSecondsInt: StateFlow<Int> = _currentSecondsInt.asStateFlow()
 
-  private val _currentAmPm = MutableStateFlow("AM")
+  private val _currentSecondsFormatted = MutableStateFlow("00")
+  val currentSecondsFormatted: StateFlow<String> = _currentSecondsFormatted.asStateFlow()
+
+  private val _currentAmPm = MutableStateFlow("am")
   val currentAmPm: StateFlow<String> = _currentAmPm.asStateFlow()
 
+  // Format: 11/05/26 (MetaMuted, sentence case, untracked)
   private val _currentDateFormatted = MutableStateFlow("")
   val currentDateFormatted: StateFlow<String> = _currentDateFormatted.asStateFlow()
 
+  // Format: Thursday (sentence case, untracked—never THURSDAY)
   private val _currentWeekdayFormatted = MutableStateFlow("")
   val currentWeekdayFormatted: StateFlow<String> = _currentWeekdayFormatted.asStateFlow()
 
@@ -120,7 +124,6 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
   private var stopwatchJob: Job? = null
   private var flipGestureDetector: FlipGestureDetector? = null
 
-  // Battery receiver
   private val batteryReceiver = object : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
       if (intent?.action == Intent.ACTION_BATTERY_CHANGED) {
@@ -140,7 +143,6 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
     val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
     application.registerReceiver(batteryReceiver, filter)
 
-    // Flip gesture detector for snoozing
     flipGestureDetector = FlipGestureDetector(application) {
       if (_triggeringAlarm.value != null && _triggeringAlarm.value?.flipToSnooze == true) {
         snoozeCurrentAlarm()
@@ -160,7 +162,6 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
     flipGestureDetector?.stop()
   }
 
-  // --- Clock Engine ---
   private fun startTimeTicker() {
     timeTickerJob?.cancel()
     timeTickerJob = viewModelScope.launch {
@@ -177,30 +178,26 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
             else -> h
           }
         }
-        val formattedHour = if (s.leadingZero) {
-          String.format(Locale.US, "%02d", rawHour)
-        } else {
-          rawHour.toString()
-        }
-        _currentHours.value = formattedHour
+        _currentHoursInt.value = rawHour
 
         // Minutes
         val minute = cal.get(Calendar.MINUTE)
-        _currentMinutes.value = String.format(Locale.US, "%02d", minute)
+        _currentMinutesInt.value = minute
 
         // Seconds
         val second = cal.get(Calendar.SECOND)
-        val secStr = String.format(Locale.US, "%02d", second)
-        _currentSeconds.value = secStr
+        _currentSecondsInt.value = second
+        _currentSecondsFormatted.value = String.format(Locale.US, "%02d", second)
 
-        // AM/PM
-        _currentAmPm.value = if (cal.get(Calendar.AM_PM) == Calendar.AM) "AM" else "PM"
+        // AM/PM (lowercase sentence-case per Hallmark rules)
+        _currentAmPm.value = if (cal.get(Calendar.AM_PM) == Calendar.AM) "am" else "pm"
 
-        // Date & Weekday
+        // Day of week (sentence case: "Thursday", untracked)
         val dayFormat = SimpleDateFormat("EEEE", Locale.getDefault())
         _currentWeekdayFormatted.value = dayFormat.format(cal.time)
 
-        val dateFormat = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
+        // Date: "MM/dd/yy" e.g. 11/05/26
+        val dateFormat = SimpleDateFormat("MM/dd/yy", Locale.getDefault())
         _currentDateFormatted.value = dateFormat.format(cal.time)
 
         // Ticking sound
@@ -213,7 +210,6 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
           _sleepTimerSecondsLeft.value -= 1
         }
 
-        // Check if any alarm should trigger right now
         checkAlarmTrigger(cal)
 
         delay(1000L)
@@ -255,7 +251,6 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
     if (current.autoDelete) {
       deleteAlarm(current.id)
     } else if (current.days.isEmpty()) {
-      // One-time alarm turns off after firing
       toggleAlarm(current.id, false)
     }
   }
@@ -264,14 +259,12 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
     val current = _triggeringAlarm.value ?: return
     soundHelper.vibrateHaptic(50)
     _triggeringAlarm.value = null
-    // Schedule snooze alert after snoozeMinutes
     viewModelScope.launch {
       delay(current.snoozeMinutes * 60 * 1000L)
       triggerAlarmAlert(current)
     }
   }
 
-  // --- Settings Management ---
   fun updateSettings(transform: (ClockSettings) -> ClockSettings) {
     val updated = transform(_settings.value)
     _settings.value = updated
@@ -284,7 +277,6 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
     _sleepTimerSecondsLeft.value = minutes * 60
   }
 
-  // --- Alarms Management ---
   fun addAlarm(alarm: AlarmItem) {
     _alarms.update { listOf(alarm) + it }
     saveAlarms(_alarms.value)
@@ -364,7 +356,6 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
         _timerRemainingSeconds.value -= 1
       }
       if (_timerRemainingSeconds.value == 0) {
-        // Complete session
         completeFocusSession()
       }
       _isTimerRunning.value = false
@@ -432,7 +423,7 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
     stopwatchJob = viewModelScope.launch {
       while (_isStopwatchRunning.value && isActive) {
         _stopwatchMillis.value = System.currentTimeMillis() - stopwatchStartTime
-        delay(16L) // ~60fps smooth ticker
+        delay(16L)
       }
     }
   }
@@ -482,7 +473,7 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
       showWeather = prefs.getBoolean("show_weather", true),
       tickingSound = prefs.getBoolean("ticking_sound", false),
       sleepTimerMinutes = prefs.getInt("sleep_timer", 0),
-      fontStyle = prefs.getString("font_style", "Bebas Neue") ?: "Bebas Neue"
+      fontStyle = "SansSerif"
     )
   }
 
@@ -500,14 +491,13 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
       .putBoolean("show_weather", s.showWeather)
       .putBoolean("ticking_sound", s.tickingSound)
       .putInt("sleep_timer", s.sleepTimerMinutes)
-      .putString("font_style", s.fontStyle)
+      .putString("font_style", "SansSerif")
       .apply()
   }
 
   private fun loadAlarms(): List<AlarmItem> {
     val raw = prefs.getString("alarms_json", null)
     if (raw.isNullOrEmpty()) {
-      // Default initial alarms
       return listOf(
         AlarmItem(hour = 7, minute = 0, label = "Work", isEnabled = true, days = setOf(Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY, Calendar.THURSDAY, Calendar.FRIDAY)),
         AlarmItem(hour = 8, minute = 30, label = "Weekend Wake", isEnabled = false, days = setOf(Calendar.SATURDAY, Calendar.SUNDAY))
