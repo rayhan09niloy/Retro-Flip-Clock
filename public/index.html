@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Retro Flip Clock</title>
+  <meta name="description" content="Productivity clock app combining retro flip-clock aesthetics with ambient desk mode, world clock, focus timer, alarms, and stopwatch.">
+  <meta property="og:title" content="Retro Flip Clock">
+  <meta property="og:description" content="Productivity clock app combining retro flip-clock aesthetics with ambient desk mode, world clock, focus timer, alarms, and stopwatch.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <style>
+    /* Hallmark v2.0.0 | theme: custom-austere-frameless | genre: atmospheric | scope: app */
+    :root {
+      --canvas-black: #000000;
+      --flap-bone: #DCDCE0;
+      --meta-muted: #8E8E93;
+      --signal-amber: #FFB800;
+      --hairline-divider: #1C1C1E;
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--canvas-black);
+      color: var(--flap-bone);
+      font-family: var(--font-stack);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Top Bar */
+    .top-header {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 10;
+    }
+
+    .brand-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--meta-muted);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--meta-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      border-radius: 50%;
+      transition: color 0.15s, background-color 0.15s;
+    }
+
+    .icon-btn:hover {
+      color: var(--flap-bone);
+      background-color: #121214;
+    }
+
+    .icon-btn.active {
+      color: var(--signal-amber);
+    }
+
+    .apk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #141416;
+      border: 1px solid var(--hairline-divider);
+      color: var(--flap-bone);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 100px;
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .apk-badge:hover {
+      border-color: var(--signal-amber);
+      color: var(--signal-amber);
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 16px 80px 16px;
+      position: relative;
+    }
+
+    .screen-view {
+      display: none;
+      width: 100%;
+      max-width: 540px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screen-view.active {
+      display: flex;
+    }
+
+    /* Desk Clock View */
+    .desk-clock-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .desk-clock-container.landscape {
+      flex-direction: row;
+      justify-content: center;
+      gap: 32px;
+    }
+
+    .digit-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .group-meta-top {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--meta-muted);
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+      text-transform: none;
+    }
+
+    .group-meta-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: 6px;
+      padding: 0 4px;
+    }
+
+    .am-pm-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--meta-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .seconds-counter {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--flap-bone);
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+      margin-left: auto;
+    }
+
+    /* Split-Flap Card Component (Strictly Frameless) */
+    .flip-card {
+      position: relative;
+      width: 260px;
+      height: 180px;
+      perspective: 1200px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (min-width: 480px) {
+      .flip-card {
+        width: 300px;
+        height: 200px;
+      }
+    }
+
+    .desk-clock-container.landscape .flip-card {
+      width: 220px;
+      height: 160px;
+    }
+
+    /* Static Top Half */
+    .flap-half {
+      width: 100%;
+      height: 50%;
+      position: relative;
+      overflow: hidden;
+      background-color: var(--canvas-black);
+    }
+
+    .flap-half.top {
+      border-bottom: 1px solid var(--canvas-black);
+    }
+
+    .flap-half.bottom {
+      border-top: 1px solid var(--canvas-black);
+    }
+
+    .flap-glyph {
+      position: absolute;
+      width: 100%;
+      height: 200%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 150px;
+      font-weight: 900;
+      color: var(--flap-bone);
+      line-height: 1;
+      letter-spacing: -0.04em;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+      left: 0;
+    }
+
+    @media (min-width: 480px) {
+      .flap-glyph {
+        font-size: 170px;
+      }
+    }
+
+    .desk-clock-container.landscape .flap-glyph {
+      font-size: 136px;
+    }
+
+    .flap-half.top .flap-glyph {
+      top: 0;
+    }
+
+    .flap-half.bottom .flap-glyph {
+      bottom: 0;
+    }
+
+    /* Central Split Line Crease (2px physical seam) */
+    .split-crease {
+      position: absolute;
+      top: calc(50% - 1px);
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--canvas-black);
+      z-index: 10;
+    }
+
+    /* 3D Falling Upper Flap */
+    .flap-fall {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      transform-origin: bottom center;
+      overflow: hidden;
+      background-color: var(--canvas-black);
+      z-index: 4;
+      backface-visibility: hidden;
+    }
+
+    .flap-fall.animating {
+      animation: flipUpper 320ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+    }
+
+    /* 3D Downward Swinging Lower Flap */
+    .flap-swing {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      transform-origin: top center;
+      overflow: hidden;
+      background-color: var(--canvas-black);
+      z-index: 5;
+      transform: rotateX(90deg);
+      backface-visibility: hidden;
+    }
+
+    .flap-swing.animating {
+      animation: flipLower 320ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+    }
+
+    .shadow-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: #000;
+      opacity: 0;
+    }
+
+    @keyframes flipUpper {
+      0% {
+        transform: rotateX(0deg);
+      }
+      100% {
+        transform: rotateX(-90deg);
+      }
+    }
+
+    @keyframes flipLower {
+      0% {
+        transform: rotateX(90deg);
+      }
+      100% {
+        transform: rotateX(0deg);
+      }
+    }
+
+    /* Timer Screen */
+    .timer-screen {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .tag-pill {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--flap-bone);
+      border: 1px solid var(--hairline-divider);
+      padding: 6px 18px;
+      border-radius: 100px;
+      letter-spacing: 0.05em;
+    }
+
+    .preset-chips {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .chip-btn {
+      background: none;
+      border: 1px solid var(--hairline-divider);
+      color: var(--meta-muted);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .chip-btn.active, .chip-btn:hover {
+      border-color: var(--signal-amber);
+      color: var(--signal-amber);
+    }
+
+    .timer-controls {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-top: 16px;
+    }
+
+    .circle-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 1px solid var(--hairline-divider);
+      background: none;
+      color: var(--flap-bone);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .circle-btn:hover {
+      border-color: var(--meta-muted);
+    }
+
+    .circle-btn.primary {
+      background-color: var(--signal-amber);
+      border-color: var(--signal-amber);
+      color: var(--canvas-black);
+    }
+
+    .circle-btn.primary:hover {
+      opacity: 0.9;
+    }
+
+    /* World Clock Screen */
+    .world-clock-screen {
+      width: 100%;
+    }
+
+    .screen-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--hairline-divider);
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--meta-muted);
+      text-transform: none;
+    }
+
+    .city-list {
+      width: 100%;
+      list-style: none;
+    }
+
+    .city-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 4px;
+      border-bottom: 1px solid var(--hairline-divider);
+    }
+
+    .city-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .city-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--flap-bone);
+    }
+
+    .city-meta {
+      font-size: 12px;
+      color: var(--meta-muted);
+    }
+
+    .city-time {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--flap-bone);
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Stopwatch Screen */
+    .stopwatch-screen {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .stopwatch-display {
+      font-size: 64px;
+      font-weight: 900;
+      color: var(--flap-bone);
+      letter-spacing: -0.02em;
+      margin: 20px 0;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stopwatch-millis {
+      font-size: 32px;
+      color: var(--signal-amber);
+    }
+
+    .lap-table {
+      width: 100%;
+      margin-top: 16px;
+      border-collapse: collapse;
+    }
+
+    .lap-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--meta-muted);
+      padding: 8px 4px;
+      border-bottom: 1px solid var(--hairline-divider);
+    }
+
+    .lap-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--flap-bone);
+      padding: 12px 4px;
+      border-bottom: 1px solid var(--hairline-divider);
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Alarm Screen */
+    .alarm-screen {
+      width: 100%;
+    }
+
+    .alarm-list {
+      width: 100%;
+      list-style: none;
+    }
+
+    .alarm-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 4px;
+      border-bottom: 1px solid var(--hairline-divider);
+    }
+
+    .alarm-time {
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--flap-bone);
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+    }
+
+    .alarm-label {
+      font-size: 13px;
+      color: var(--meta-muted);
+      margin-top: 2px;
+    }
+
+    /* Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 26px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #242426;
+      transition: .2s;
+      border-radius: 26px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--flap-bone);
+      transition: .2s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--signal-amber);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+      background-color: var(--canvas-black);
+    }
+
+    /* Retro Bottom Navigation Bar */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background-color: var(--canvas-black);
+      border-top: 1px solid var(--hairline-divider);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 16px;
+      z-index: 100;
+    }
+
+    .nav-item {
+      background: none;
+      border: none;
+      color: var(--meta-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 18px;
+      cursor: pointer;
+      border-radius: 12px;
+      transition: color 0.15s, background-color 0.15s;
+    }
+
+    .nav-item:hover {
+      color: var(--flap-bone);
+    }
+
+    .nav-item.active {
+      color: var(--signal-amber);
+    }
+
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #0D0D0E;
+      border: 1px solid var(--hairline-divider);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 360px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--flap-bone);
+    }
+
+    .time-picker-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin: 12px 0;
+    }
+
+    .picker-input {
+      background: #18181A;
+      border: 1px solid var(--hairline-divider);
+      color: var(--flap-bone);
+      font-size: 32px;
+      font-weight: 900;
+      width: 72px;
+      text-align: center;
+      padding: 8px 4px;
+      border-radius: 8px;
+      font-feature-settings: "tnum";
+    }
+
+    .modal-btn-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .text-btn {
+      background: none;
+      border: none;
+      color: var(--meta-muted);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px 14px;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .text-btn.primary {
+      color: var(--signal-amber);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header class="top-header">
+    <span class="brand-title">RETRO FLIP CLOCK</span>
+    <div class="top-actions">
+      <a class="apk-badge" href="/download-apk" title="Download compiled Android debug APK">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        <span>Android APK</span>
+      </a>
+      <button class="icon-btn" id="soundToggle" title="Toggle Mechanical Audio">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+      </button>
+      <button class="icon-btn" id="layoutToggle" title="Toggle Landscape/Portrait">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main>
+
+    <!-- 1. DESK CLOCK SCREEN -->
+    <section class="screen-view active" id="deskScreen">
+      <div class="desk-clock-container" id="deskContainer">
+        
+        <!-- Hours Block -->
+        <div class="digit-group">
+          <div class="group-meta-top" id="dateLabel">11/05/26</div>
+          <div class="flip-card" id="hoursCard">
+            <!-- Top Half Static -->
+            <div class="flap-half top">
+              <div class="flap-glyph" id="hStaticTop">12</div>
+            </div>
+            <!-- Bottom Half Static -->
+            <div class="flap-half bottom">
+              <div class="flap-glyph" id="hStaticBottom">12</div>
+            </div>
+            <div class="split-crease"></div>
+            <!-- Falling Flap -->
+            <div class="flap-fall" id="hFall">
+              <div class="flap-glyph" id="hFallGlyph">12</div>
+              <div class="shadow-overlay" id="hFallShadow"></div>
+            </div>
+            <!-- Swinging Flap -->
+            <div class="flap-swing" id="hSwing">
+              <div class="flap-glyph" id="hSwingGlyph">12</div>
+              <div class="shadow-overlay" id="hSwingShadow"></div>
+            </div>
+          </div>
+          <div class="group-meta-bottom">
+            <span class="am-pm-label" id="ampmLabel">PM</span>
+          </div>
+        </div>
+
+        <!-- Minutes Block -->
+        <div class="digit-group">
+          <div class="group-meta-top" id="dayLabel">Thursday</div>
+          <div class="flip-card" id="minutesCard">
+            <!-- Top Half Static -->
+            <div class="flap-half top">
+              <div class="flap-glyph" id="mStaticTop">00</div>
+            </div>
+            <!-- Bottom Half Static -->
+            <div class="flap-half bottom">
+              <div class="flap-glyph" id="mStaticBottom">00</div>
+            </div>
+            <div class="split-crease"></div>
+            <!-- Falling Flap -->
+            <div class="flap-fall" id="mFall">
+              <div class="flap-glyph" id="mFallGlyph">00</div>
+              <div class="shadow-overlay" id="mFallShadow"></div>
+            </div>
+            <!-- Swinging Flap -->
+            <div class="flap-swing" id="mSwing">
+              <div class="flap-glyph" id="mSwingGlyph">00</div>
+              <div class="shadow-overlay" id="mSwingShadow"></div>
+            </div>
+          </div>
+          <div class="group-meta-bottom">
+            <span></span>
+            <span class="seconds-counter" id="secondsLabel">00</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2. ALARM SCREEN -->
+    <section class="screen-view" id="alarmScreen">
+      <div class="alarm-screen">
+        <div class="screen-header-row">
+          <span class="section-title">Alarms</span>
+          <button class="icon-btn active" id="addAlarmBtn" title="Add Alarm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+        <ul class="alarm-list" id="alarmList">
+          <li class="alarm-row">
+            <div>
+              <div class="alarm-time">07:00 <span style="font-size: 14px; color: var(--meta-muted)">AM</span></div>
+              <div class="alarm-label">Weekdays • Acoustic Flap</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked>
+              <span class="slider"></span>
+            </label>
+          </li>
+          <li class="alarm-row">
+            <div>
+              <div class="alarm-time">08:30 <span style="font-size: 14px; color: var(--meta-muted)">AM</span></div>
+              <div class="alarm-label">Weekends • Gentle Chime</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked>
+              <span class="slider"></span>
+            </label>
+          </li>
+          <li class="alarm-row">
+            <div>
+              <div class="alarm-time">10:00 <span style="font-size: 14px; color: var(--meta-muted)">PM</span></div>
+              <div class="alarm-label">Daily • Bedtime Wind Down</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox">
+              <span class="slider"></span>
+            </label>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 3. TIMER SCREEN -->
+    <section class="screen-view" id="timerScreen">
+      <div class="timer-screen">
+        <div class="tag-pill">Study</div>
+        <div class="preset-chips">
+          <button class="chip-btn active" onclick="setTimerPreset(25)">25m</button>
+          <button class="chip-btn" onclick="setTimerPreset(5)">5m</button>
+          <button class="chip-btn" onclick="setTimerPreset(15)">15m</button>
+          <button class="chip-btn" onclick="setTimerPreset(50)">50m</button>
+        </div>
+
+        <!-- Timer Digits -->
+        <div class="desk-clock-container" style="gap: 16px;">
+          <!-- Timer Minutes -->
+          <div class="digit-group">
+            <div class="flip-card" id="timerMCard">
+              <div class="flap-half top"><div class="flap-glyph" id="tmStaticTop">25</div></div>
+              <div class="flap-half bottom"><div class="flap-glyph" id="tmStaticBottom">25</div></div>
+              <div class="split-crease"></div>
+              <div class="flap-fall" id="tmFall"><div class="flap-glyph" id="tmFallGlyph">25</div></div>
+              <div class="flap-swing" id="tmSwing"><div class="flap-glyph" id="tmSwingGlyph">25</div></div>
+            </div>
+          </div>
+          <!-- Timer Seconds -->
+          <div class="digit-group">
+            <div class="flip-card" id="timerSCard">
+              <div class="flap-half top"><div class="flap-glyph" id="tsStaticTop">00</div></div>
+              <div class="flap-half bottom"><div class="flap-glyph" id="tsStaticBottom">00</div></div>
+              <div class="split-crease"></div>
+              <div class="flap-fall" id="tsFall"><div class="flap-glyph" id="tsFallGlyph">00</div></div>
+              <div class="flap-swing" id="tsSwing"><div class="flap-glyph" id="tsSwingGlyph">00</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timer-controls">
+          <button class="circle-btn" id="resetTimerBtn" title="Reset">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+            </svg>
+          </button>
+          <button class="circle-btn primary" id="playTimerBtn" title="Start/Pause">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" id="timerPlayIcon">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </button>
+          <button class="circle-btn" id="skipTimerBtn" title="Skip">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 4 15 12 5 20 5 4"></polygon>
+              <line x1="19" y1="5" x2="19" y2="19"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. STOPWATCH SCREEN -->
+    <section class="screen-view" id="stopwatchScreen">
+      <div class="stopwatch-screen">
+        <div class="stopwatch-display">
+          <span id="swTime">00:00</span>.<span class="stopwatch-millis" id="swMillis">00</span>
+        </div>
+
+        <div class="timer-controls">
+          <button class="circle-btn" id="swLapBtn" title="Lap / Reset">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+          <button class="circle-btn primary" id="swStartBtn" title="Start / Stop">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" id="swPlayIcon">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </button>
+        </div>
+
+        <div style="width: 100%; max-width: 440px;">
+          <div class="lap-header">
+            <span>Lap</span>
+            <span>Lap time</span>
+            <span>Total</span>
+          </div>
+          <div id="lapsList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. WORLD CLOCK SCREEN -->
+    <section class="screen-view" id="worldScreen">
+      <div class="world-clock-screen">
+        <div class="screen-header-row">
+          <span class="section-title">World clock</span>
+          <button class="icon-btn active" id="addCityBtn" title="Add City">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+        <ul class="city-list" id="cityList">
+          <li class="city-row">
+            <div class="city-info">
+              <div class="city-name">Home city (Dhaka)</div>
+              <div class="city-meta">Local time • UTC+6</div>
+            </div>
+            <div class="city-time" data-offset="6">00:00</div>
+          </li>
+          <li class="city-row">
+            <div class="city-info">
+              <div class="city-name">Tokyo</div>
+              <div class="city-meta">+3 hrs • Tomorrow</div>
+            </div>
+            <div class="city-time" data-offset="9">00:00</div>
+          </li>
+          <li class="city-row">
+            <div class="city-info">
+              <div class="city-name">London</div>
+              <div class="city-meta">-6 hrs • Today</div>
+            </div>
+            <div class="city-time" data-offset="0">00:00</div>
+          </li>
+          <li class="city-row">
+            <div class="city-info">
+              <div class="city-name">New York</div>
+              <div class="city-meta">-11 hrs • Today</div>
+            </div>
+            <div class="city-time" data-offset="-5">00:00</div>
+          </li>
+          <li class="city-row">
+            <div class="city-info">
+              <div class="city-name">Sydney</div>
+              <div class="city-meta">+5 hrs • Tomorrow</div>
+            </div>
+            <div class="city-time" data-offset="11">00:00</div>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Add Alarm Modal -->
+  <div class="modal-backdrop" id="alarmModal">
+    <div class="modal-card">
+      <div class="modal-title">New Alarm</div>
+      <div class="time-picker-row">
+        <input class="picker-input" type="number" id="alarmHourIn" min="0" max="23" value="07">
+        <span style="font-size: 28px; font-weight: 900; color: var(--flap-bone)">:</span>
+        <input class="picker-input" type="number" id="alarmMinIn" min="0" max="59" value="30">
+      </div>
+      <input type="text" id="alarmNoteIn" placeholder="Label (e.g. Morning workout)" style="background: #18181A; border: 1px solid var(--hairline-divider); color: var(--flap-bone); padding: 8px 12px; border-radius: 8px; font-size: 14px;">
+      <div class="modal-btn-row">
+        <button class="text-btn" onclick="closeAlarmModal()">Cancel</button>
+        <button class="text-btn primary" onclick="saveNewAlarm()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="bottom-bar">
+    <button class="nav-item active" data-tab="deskScreen" title="Desk Clock">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+    </button>
+    <button class="nav-item" data-tab="alarmScreen" title="Alarm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+      </svg>
+    </button>
+    <button class="nav-item" data-tab="timerScreen" title="Timer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="13" r="8"></circle>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="2" x2="12" y2="5"></line>
+      </svg>
+    </button>
+    <button class="nav-item" data-tab="stopwatchScreen" title="Stopwatch">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="14" r="8"></circle>
+        <line x1="12" y1="10" x2="12" y2="14"></line>
+        <line x1="10" y1="2" x2="14" y2="2"></line>
+      </svg>
+    </button>
+    <button class="nav-item" data-tab="worldScreen" title="World Clock">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="2" y1="12" x2="22" y2="12"></line>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+      </svg>
+    </button>
+  </nav>
+
+  <script>
+    /* Mechanical Audio Synthesis */
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function playMechanicalFlipClick() {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(45, now + 0.04);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.045);
+      } catch (e) {}
+    }
+
+    /* Flip Controller */
+    class FlipDigit {
+      constructor(prefix) {
+        this.staticTop = document.getElementById(prefix + 'StaticTop');
+        this.staticBottom = document.getElementById(prefix + 'StaticBottom');
+        this.fall = document.getElementById(prefix + 'Fall');
+        this.fallGlyph = document.getElementById(prefix + 'FallGlyph');
+        this.swing = document.getElementById(prefix + 'Swing');
+        this.swingGlyph = document.getElementById(prefix + 'SwingGlyph');
+        this.fallShadow = document.getElementById(prefix + 'FallShadow');
+        this.swingShadow = document.getElementById(prefix + 'SwingShadow');
+        this.currentVal = this.staticTop.textContent;
+        this.isAnimating = false;
+      }
+
+      flipTo(newVal) {
+        const valStr = String(newVal).padStart(2, '0');
+        if (valStr === this.currentVal || this.isAnimating) return;
+
+        const prevVal = this.currentVal;
+        this.currentVal = valStr;
+        this.isAnimating = true;
+
+        // Static top reveals the new value underneath as upper flap falls
+        this.staticTop.textContent = valStr;
+        // Static bottom maintains previous value until new flap drops down
+        this.staticBottom.textContent = prevVal;
+
+        // Falling flap is the top half of previous value rotating down
+        this.fallGlyph.textContent = prevVal;
+        // Swinging flap is the bottom half of new value rotating down
+        this.swingGlyph.textContent = valStr;
+
+        // Trigger animations
+        this.fall.classList.remove('animating');
+        this.swing.classList.remove('animating');
+        void this.fall.offsetWidth; // Reflow
+        void this.swing.offsetWidth;
+
+        this.fall.classList.add('animating');
+        this.swing.classList.add('animating');
+
+        playMechanicalFlipClick();
+
+        setTimeout(() => {
+          this.staticBottom.textContent = valStr;
+          this.fall.classList.remove('animating');
+          this.swing.classList.remove('animating');
+          this.isAnimating = false;
+        }, 320);
+      }
+    }
+
+    const hoursFlip = new FlipDigit('h');
+    const minutesFlip = new FlipDigit('m');
+    const timerMFlip = new FlipDigit('tm');
+    const timerSFlip = new FlipDigit('ts');
+
+    /* Desk Clock Ticker */
+    const dateLabel = document.getElementById('dateLabel');
+    const dayLabel = document.getElementById('dayLabel');
+    const ampmLabel = document.getElementById('ampmLabel');
+    const secondsLabel = document.getElementById('secondsLabel');
+
+    function updateDeskClock() {
+      const now = new Date();
+      let hours = now.getHours();
+      const isPm = hours >= 12;
+      ampmLabel.textContent = isPm ? 'PM' : 'AM';
+
+      // 12-hour format
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+
+      hoursFlip.flipTo(hours);
+      minutesFlip.flipTo(minutes);
+      secondsLabel.textContent = String(seconds).padStart(2, '0');
+
+      // Date format MM/dd/yy
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const yy = String(now.getFullYear()).slice(-2);
+      dateLabel.textContent = `${mm}/${dd}/${yy}`;
+
+      // Sentence-case day
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      dayLabel.textContent = days[now.getDay()];
+
+      // World clock rows
+      document.querySelectorAll('.city-time').forEach(el => {
+        const offset = parseFloat(el.getAttribute('data-offset'));
+        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+        const cityDate = new Date(utc + (3600000 * offset));
+        let ch = cityDate.getHours();
+        ch = ch % 12 || 12;
+        const cm = String(cityDate.getMinutes()).padStart(2, '0');
+        const cap = cityDate.getHours() >= 12 ? 'PM' : 'AM';
+        el.textContent = `${String(ch).padStart(2, '0')}:${cm} ${cap}`;
+      });
+    }
+
+    setInterval(updateDeskClock, 1000);
+    updateDeskClock();
+
+    /* Layout Toggle */
+    const layoutToggle = document.getElementById('layoutToggle');
+    const deskContainer = document.getElementById('deskContainer');
+    layoutToggle.addEventListener('click', () => {
+      deskContainer.classList.toggle('landscape');
+      layoutToggle.classList.toggle('active');
+    });
+
+    /* Audio Toggle */
+    const soundToggle = document.getElementById('soundToggle');
+    soundToggle.addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      soundToggle.classList.toggle('active', soundEnabled);
+    });
+
+    /* Navigation */
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.screen-view').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        const target = document.getElementById(btn.getAttribute('data-tab'));
+        if (target) target.classList.add('active');
+      });
+    });
+
+    /* Focus Timer */
+    let timerDuration = 25 * 60;
+    let timerRemaining = timerDuration;
+    let timerRunning = false;
+    let timerInterval = null;
+
+    function renderTimer() {
+      const m = Math.floor(timerRemaining / 60);
+      const s = timerRemaining % 60;
+      timerMFlip.flipTo(m);
+      timerSFlip.flipTo(s);
+    }
+
+    function setTimerPreset(mins) {
+      document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      timerDuration = mins * 60;
+      timerRemaining = timerDuration;
+      if (timerRunning) toggleTimer();
+      renderTimer();
+    }
+
+    function toggleTimer() {
+      timerRunning = !timerRunning;
+      const playIcon = document.getElementById('timerPlayIcon');
+      if (timerRunning) {
+        playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
+        timerInterval = setInterval(() => {
+          if (timerRemaining > 0) {
+            timerRemaining--;
+            renderTimer();
+          } else {
+            clearInterval(timerInterval);
+            timerRunning = false;
+            playIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
+          }
+        }, 1000);
+      } else {
+        clearInterval(timerInterval);
+        playIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
+      }
+    }
+
+    document.getElementById('playTimerBtn').addEventListener('click', toggleTimer);
+    document.getElementById('resetTimerBtn').addEventListener('click', () => {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      timerRemaining = timerDuration;
+      document.getElementById('timerPlayIcon').innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
+      renderTimer();
+    });
+    document.getElementById('skipTimerBtn').addEventListener('click', () => {
+      timerRemaining = 0;
+      renderTimer();
+    });
+
+    /* Stopwatch */
+    let swRunning = false;
+    let swStartTime = 0;
+    let swElapsed = 0;
+    let swInterval = null;
+    let lapCount = 0;
+    let lastLapElapsed = 0;
+
+    function formatTime(ms) {
+      const totalSec = Math.floor(ms / 1000);
+      const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
+      const s = String(totalSec % 60).padStart(2, '0');
+      const cs = String(Math.floor((ms % 1000) / 10)).padStart(2, '0');
+      return { m, s, cs };
+    }
+
+    function updateStopwatch() {
+      const current = Date.now() - swStartTime + swElapsed;
+      const { m, s, cs } = formatTime(current);
+      document.getElementById('swTime').textContent = `${m}:${s}`;
+      document.getElementById('swMillis').textContent = cs;
+    }
+
+    document.getElementById('swStartBtn').addEventListener('click', () => {
+      swRunning = !swRunning;
+      const playIcon = document.getElementById('swPlayIcon');
+      if (swRunning) {
+        swStartTime = Date.now();
+        swInterval = setInterval(updateStopwatch, 30);
+        playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
+      } else {
+        clearInterval(swInterval);
+        swElapsed += Date.now() - swStartTime;
+        playIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
+      }
+    });
+
+    document.getElementById('swLapBtn').addEventListener('click', () => {
+      if (!swRunning) {
+        // Reset
+        clearInterval(swInterval);
+        swElapsed = 0;
+        lastLapElapsed = 0;
+        lapCount = 0;
+        document.getElementById('swTime').textContent = '00:00';
+        document.getElementById('swMillis').textContent = '00';
+        document.getElementById('lapsList').innerHTML = '';
+        return;
+      }
+      const total = Date.now() - swStartTime + swElapsed;
+      const lapTime = total - lastLapElapsed;
+      lastLapElapsed = total;
+      lapCount++;
+
+      const fLap = formatTime(lapTime);
+      const fTotal = formatTime(total);
+
+      const row = document.createElement('div');
+      row.className = 'lap-row';
+      row.innerHTML = `
+        <span>Lap ${String(lapCount).padStart(2, '0')}</span>
+        <span>${fLap.m}:${fLap.s}.${fLap.cs}</span>
+        <span>${fTotal.m}:${fTotal.s}.${fTotal.cs}</span>
+      `;
+      const list = document.getElementById('lapsList');
+      list.insertBefore(row, list.firstChild);
+    });
+
+    /* Alarm Modal */
+    const alarmModal = document.getElementById('alarmModal');
+    document.getElementById('addAlarmBtn').addEventListener('click', () => {
+      alarmModal.classList.add('open');
+    });
+
+    function closeAlarmModal() {
+      alarmModal.classList.remove('open');
+    }
+
+    function saveNewAlarm() {
+      const h = String(document.getElementById('alarmHourIn').value).padStart(2, '0');
+      const m = String(document.getElementById('alarmMinIn').value).padStart(2, '0');
+      const note = document.getElementById('alarmNoteIn').value || 'Alarm';
+      const li = document.createElement('li');
+      li.className = 'alarm-row';
+      li.innerHTML = `
+        <div>
+          <div class="alarm-time">${h}:${m}</div>
+          <div class="alarm-label">${note}</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" checked>
+          <span class="slider"></span>
+        </label>
+      `;
+      document.getElementById('alarmList').appendChild(li);
+      closeAlarmModal();
+    }
+  </script>
+</body>
+</html>

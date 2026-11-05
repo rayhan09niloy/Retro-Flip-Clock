@@ -1,0 +1,11 @@
+{
+  "name": "retro-flip-clock",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Productivity clock app combining retro flip-clock aesthetics with ambient desk mode, world clock, focus timer, alarms, and stopwatch.",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "echo 'Build OK'"
+  }
+}
